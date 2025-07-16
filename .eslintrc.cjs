@@ -40,5 +40,5 @@ module.exports = {
   rules: {
     // custom rules
   },
-  ignorePatterns: ['node_modules', 'dist', 'build'],
+  ignorePatterns: ['node_modules', 'dist', 'build', 'public'],
 };

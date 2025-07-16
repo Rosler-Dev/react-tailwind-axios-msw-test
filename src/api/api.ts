@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { ITourReservation, IToursAvailable } from "../types";
  
 const axiosInstance = axios.create({
-  baseURL: 'https://localhost:3002/api/',
+  baseURL: 'http://localhost:3002/api/',
 });
 
 const getFullRoute = (route: string): string => {
