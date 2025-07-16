@@ -3,7 +3,7 @@ import ReactLogo from "./components/ReactLogo";
 import Counter from "./components/Counter";
 import TourCard from "./components/TourCard";
 import { capitalize, getLocale } from "./utils";
-import API from "./api";
+import API from "./api/api";
 import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservation, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
 
 function getDefaultGuestsState(): IGuests {
