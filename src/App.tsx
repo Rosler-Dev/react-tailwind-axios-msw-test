@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import "./App.scss";
-import ReactLogo from "./assets/ReactLogo.jsx";
-import Counter from "./components/Counter.jsx";
-import TourCard from "./components/TourCard.jsx";
-import { capitalize, getLocale } from "./utils.js";
-import { Queries } from "./api.js";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import ReactLogo from "./components/ReactLogo";
+import Counter from "./components/Counter";
+import TourCard from "./components/TourCard";
+import { capitalize, getLocale } from "./utils";
+import { Queries, Mutations } from "./api";
+import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservation, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
 
-function getDefaultGuestsState() {
+function getDefaultGuestsState(): IGuests {
   return ({
     adult: 1,
     child: 1,
@@ -15,14 +15,18 @@ function getDefaultGuestsState() {
   });
 }
 
-function getDefaulTourDataState() {
+function getDefaulTourDataState(): IToursAvailableEnhanced {
   return ({
     tours: [],
-    currency: {},
+    currency: {
+      currency: "CAD",
+      currencyOffset: 0,
+      currencyFormatter: Intl.NumberFormat(),
+    },
   });
 }
 
-function getDefaultSortDataState() {
+function getDefaultSortDataState(): ISort<ITour> {
   return ({
     direction: "",
     compareFn: undefined,
@@ -30,34 +34,43 @@ function getDefaultSortDataState() {
 }
 
 function App() {
-  const initialized = useRef(false);
-  const [guests, setGuests] = useState(getDefaultGuestsState());
-  const [tourData, setTourData] = useState(getDefaulTourDataState());
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortData, setSortData] = useState(getDefaultSortDataState());
-  const [booking, setBooking] = useState();
+  const initialized = useRef<boolean>(false);
+  const [guests, setGuests] = useState<IGuests>(getDefaultGuestsState());
+  const [tourData, setTourData] = useState<IToursAvailableEnhanced>(getDefaulTourDataState());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [sortData, setSortData] = useState<ISort<ITourEnhanced>>(getDefaultSortDataState());
+  const [booking, setBooking] = useState<ITourReservation | undefined>();
 
   useEffect(() => {
     if (initialized.current) {
       return;
     }
     initialized.current = true; // avoid second call to tours query
-    Queries.getAvailableTours()
-      .then(data => {
-        setTourData(enhanceTourData(data) ?? getDefaulTourDataState());
-      }).finally(() => setIsLoading(false));
+    const getAvailableTours = async () => {
+      const result = await Queries.getAvailableTours();
+      setTourData(enhanceTourData(result) ?? getDefaulTourDataState());
+      setIsLoading(false);
+    };
+    getAvailableTours();
   }, []);
 
-  const handleCounterChange = useCallback((id, val) => {
-    setGuests({
-      ...guests,
-      [id]: val,
+  const bookTour = useCallback(async (id: string, tickets: ITourReservationTicket[]): Promise<void> => {
+    const result = await Mutations.reserveTour({
+      tourId: id,
+      tickets: tickets, 
     });
-  }, [guests]);
+    
+    if (result) {
+      setBooking(result);
+      setTimeout(() => setBooking(undefined), 4000);
+    }
+  }, []);
 
-  const handleTourBooking = useCallback((result) => {
-    setBooking(result);
-    setTimeout(() => setBooking(undefined), 4000);
+  const handleCounterChange = useCallback((id: string, val: number): void => {
+    setGuests((g) => ({
+      ...g,
+      [id]: val,
+    }));
   }, []);
 
   const { tours, currency } = tourData;
@@ -66,8 +79,8 @@ function App() {
   const guestCount = guests.adult + guests.child + guests.senior + guests.infant;
   const applicableTours = useMemo(() => tours.filter(t1 => canTourAccommodateGuests(t1, guests, guestCount)).map(t2 => {
     const { ticketsToBook, price } = getCheapestMatchingTicketsToBook(t2, guests, currencyOffset);
-    return ({...t2, ticketsToBook, price});
-  }), [tourData, guests]);
+    return ({...t2, ticketsToBook, price} as ITourEnhanced);
+  }), [tours, guests, guestCount, currencyOffset]);
   
   useMemo(() => {
     if (sortData.compareFn) {
@@ -83,17 +96,16 @@ function App() {
         {Object.entries(guests).map(([key, count]) => (
           <Counter
             key={key}
-            id={key}
             label={capitalize(key)}
             value={count}
-            onChange={handleCounterChange}
+            onChange={(value: number) => handleCounterChange(key, value)}
           />
         ))}
       </div>
       <h1 className="font-bold text-2xl">Available Tours</h1>
       <div className="flex items-center mt-3 mb-6">
         <p>Sort By:</p>
-        <select className="ml-2 px-1 py-0.5 border border-solid border-black" onChange={(evt) => setSortData(getNewSortData(evt.target.value))}>
+        <select className="ml-2 px-1 py-0.5 border border-solid border-black" onChange={(evt) => setSortData(getNewSortData(evt.target.value as Direction))}>
           <option value="">--None--</option>
           <option value="asc">Lowest Price</option>
           <option value="desc">Highest Price</option>
@@ -106,13 +118,12 @@ function App() {
               return (
                 <TourCard
                   key={key}
-                  id={tour.id}
                   imgSrc={tour.image}
                   name={tour.name}
                   description={tour.description}
                   price={currencyFormatter.format(tour.price)}
-                  tickets={tour.ticketsToBook}
-                  onSuccess={handleTourBooking}
+                  hasTickets={tour.ticketsToBook.length > 0}
+                  onBooking={() => bookTour(tour.id, tour.ticketsToBook)}
                 />
               );
             })}
@@ -125,11 +136,12 @@ function App() {
   );
 }
 
-function enhanceTourData(tourData) {
+function enhanceTourData(tourData?: IToursAvailable): IToursAvailableEnhanced | undefined {
   if (!tourData) {
     return;
   }
-  tourData.tours.forEach(tour => {
+  const tourDataEnhanced = {...tourData} as IToursAvailableEnhanced;
+  tourDataEnhanced.tours.forEach(tour => {
     tour.ticketsSeatCountByName = {
       adult: 0,
       child: 0,
@@ -148,39 +160,39 @@ function enhanceTourData(tourData) {
       if (t.pax <= 0) {
         continue;
       }
-      const name = t.name.toLowerCase();
+      const name = t.name.toLowerCase() as GuestType;
       tour.ticketsSeatCountByName[name] += t.pax;
       tour.ticketsByName[name].push(t);
-    };
+    }
 
     Object.values(tour.ticketsByName).forEach(tickets => {
       tickets.sort(lowestPriceCompareFn);
     });
   });
 
-  tourData.currency.currencyOffset /= 100; // change offset to dollars
-  tourData.currency.currencyFormatter = Intl.NumberFormat(getLocale(), { style: "currency", currency: tourData.currency.currency, currencyDisplay: "narrowSymbol" });
+  tourDataEnhanced.currency.currencyOffset /= 100; // change offset to dollars
+  tourDataEnhanced.currency.currencyFormatter = Intl.NumberFormat(getLocale(), { style: "currency", currency: tourDataEnhanced.currency.currency, currencyDisplay: "narrowSymbol" });
 
-  return tourData;
+  return tourDataEnhanced;
 }
 
-function lowestPriceCompareFn(a, b) {
+function lowestPriceCompareFn(a: ITicket, b: ITicket): number {
   return a.price - b.price;
-};
+}
 
-function canTourAccommodateGuests(tour, guests, guestCount) {
+function canTourAccommodateGuests(tour: ITourEnhanced, guests: IGuests, guestCount: number): boolean {
   return guestCount >= tour.minPax && guestCount <= tour.maxPax && guestCount <= tour.seats && guests.adult <= tour.ticketsSeatCountByName.adult &&
          guests.child <= tour.ticketsSeatCountByName.child && guests.senior <= tour.ticketsSeatCountByName.senior && guests.infant <= tour.ticketsSeatCountByName.infant;
 }
 
-function getCheapestMatchingTicketsToBook(tour, guests, currencyOffset) {
+function getCheapestMatchingTicketsToBook(tour: ITourEnhanced, guests: IGuests, currencyOffset: number): {ticketsToBook: ITourReservationTicket[], price: number} {
   // assumes tour has enough tickets of the appropriate type, and that tickets are in sorted order by price, asc.
   // doing things this way because although the test data doesn't have this, there could be multiple tickets of the same name (ex: Adult) that have different prices (earlybird?).
-  const ticketsToBook = [];
+  const ticketsToBook: ITourReservationTicket[] = [];
   let price = 0;
 
-  Object.entries(tour.ticketsByName).forEach(([name, tickets]) => {
-    const ticketData = _getCheapestTicketsData(tickets, guests[name]);
+  Object.entries(tour.ticketsByName).forEach(([name, tickets]: [string, ITicket[]]) => {
+    const ticketData = _getCheapestTicketsData(tickets, guests[name as GuestType]);
     ticketsToBook.push(...ticketData.tickets);
     price += ticketData.price;
   });
@@ -190,10 +202,10 @@ function getCheapestMatchingTicketsToBook(tour, guests, currencyOffset) {
   return { ticketsToBook, price };
 }
 
-function _getCheapestTicketsData(tickets, count) {
+function _getCheapestTicketsData(tickets: ITicket[], count: number): {tickets: ITourReservationTicket[], price: number} {
   // assumes tickets are sorted order by price, asc.
   const ticketsData = {
-    tickets: [],
+    tickets: [] as ITourReservationTicket[],
     price: 0,
   };
 
@@ -217,11 +229,11 @@ function _getCheapestTicketsData(tickets, count) {
   return ticketsData;
 }
 
-function getNewSortData(direction) {
-  const newSortData = { direction };
+function getNewSortData(direction: Direction) {
+  const newSortData = { direction } as ISort<ITourEnhanced>;
 
   if (direction === "asc" || direction === 'desc') {
-    newSortData.compareFn = ((a, b) => {
+    newSortData.compareFn = ((a: ITourEnhanced, b: ITourEnhanced) => {
       return direction === "asc" ? a.price - b.price : b.price - a.price;
     });
   }

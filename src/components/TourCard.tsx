@@ -1,22 +1,18 @@
-import { memo } from "react";
-import { Mutations } from "../api.js";
+import React, { memo } from "react";
 
-async function bookTour(id, tickets, onSuccess) {
-  const result = await Mutations.reserveTour({
-    tourId: id,
-    tickets: tickets, 
-  });
-  
-  if (result) {
-    onSuccess(result);
-  };
+interface TourCardProps {
+  imgSrc: string,
+  name: string,
+  description: string,
+  price: string,
+  hasTickets: boolean,
+  onBooking: () => void,
 }
 
-const TourCard = memo(({id, imgSrc, name, description, price, tickets, onSuccess}) => {
-  const hasTickets = tickets?.length > 0;
+const TourCard = memo(function TourCardMemo({imgSrc, name, description, price, hasTickets, onBooking}: TourCardProps) {
   const bookingClasses = hasTickets ? "cursor-pointer will-change-transform transition-shadow hover:shadow-xl transition-transform hover:translate-y-[-8px]" : "";
   return (
-    <div className={`flex flex-col border border-1 border-solid border-gray-200 ${bookingClasses}`} onClick={() => bookTour(id, tickets, onSuccess)}>
+    <div className={`flex flex-col border border-1 border-solid border-gray-200 ${bookingClasses}`} onClick={onBooking}>
       <img src={imgSrc} />
       <div className="flex flex-1 flex-col justify-between">
         <div className="p-2">
@@ -34,4 +30,4 @@ const TourCard = memo(({id, imgSrc, name, description, price, tickets, onSuccess
   );
 });
 
-export default TourCard
+export default TourCard;
