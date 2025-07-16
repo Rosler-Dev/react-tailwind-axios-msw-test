@@ -28,7 +28,7 @@ export interface IToursAvailableEnhanced {
 
 export interface ITicket {
   id: string;
-  name: "";
+  name: GuestType;
   pax: number;
   price: number;
 }

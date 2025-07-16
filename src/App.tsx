@@ -3,7 +3,7 @@ import ReactLogo from "./components/ReactLogo";
 import Counter from "./components/Counter";
 import TourCard from "./components/TourCard";
 import { capitalize, getLocale } from "./utils";
-import { Queries, Mutations } from "./api";
+import API from "./api/api";
 import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservation, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
 
 function getDefaultGuestsState(): IGuests {
@@ -47,7 +47,7 @@ function App() {
     }
     initialized.current = true; // avoid second call to tours query
     const getAvailableTours = async () => {
-      const result = await Queries.getAvailableTours();
+      const result = await API.getAvailableTours();
       setTourData(enhanceTourData(result) ?? getDefaulTourDataState());
       setIsLoading(false);
     };
@@ -55,7 +55,7 @@ function App() {
   }, []);
 
   const bookTour = useCallback(async (id: string, tickets: ITourReservationTicket[]): Promise<void> => {
-    const result = await Mutations.reserveTour({
+    const result = await API.reserveTour({
       tourId: id,
       tickets: tickets, 
     });
@@ -91,7 +91,7 @@ function App() {
   return (
     <div className="px-5 py-2">
       <ReactLogo className={`mb-2 ${isLoading ? 'animate-spin' : undefined}`} />
-      <h1 className="font-bold text-2xl">Filters</h1>
+      <h1 className="font-bold text-2xl">Ticket Selection</h1>
       <div className="grid grid-cols-[auto_auto_20px_auto] max-w-60 mt-1 mb-5">
         {Object.entries(guests).map(([key, count]) => (
           <Counter

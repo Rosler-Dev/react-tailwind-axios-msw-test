@@ -35,6 +35,4 @@ const Counter = memo(function CounterMemo({label, value, onChange}: CounterProps
   );
 });
 
-Counter.displayName = 'Counter';
-
 export default Counter;
