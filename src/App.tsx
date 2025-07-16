@@ -3,7 +3,7 @@ import ReactLogo from "./components/ReactLogo";
 import Counter from "./components/Counter";
 import TourCard from "./components/TourCard";
 import { capitalize, getLocale } from "./utils";
-import { Queries, Mutations } from "./api";
+import API from "./api";
 import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservation, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
 
 function getDefaultGuestsState(): IGuests {
@@ -47,7 +47,7 @@ function App() {
     }
     initialized.current = true; // avoid second call to tours query
     const getAvailableTours = async () => {
-      const result = await Queries.getAvailableTours();
+      const result = await API.getAvailableTours();
       setTourData(enhanceTourData(result) ?? getDefaulTourDataState());
       setIsLoading(false);
     };
@@ -55,7 +55,7 @@ function App() {
   }, []);
 
   const bookTour = useCallback(async (id: string, tickets: ITourReservationTicket[]): Promise<void> => {
-    const result = await Mutations.reserveTour({
+    const result = await API.reserveTour({
       tourId: id,
       tickets: tickets, 
     });

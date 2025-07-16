@@ -3,51 +3,69 @@ import { ITourReservation, IToursAvailable } from "./types";
  
 axios.defaults.baseURL = 'https://candidate-application.dolli.cloud/api/';
 
-function handleAxiosError(err: AxiosError) {
-  if (err.response) {
-    console.error(err.response.data);
-    console.error(err.response.status);
-    console.error(err.response.headers);
-  } else if (err.request) {
-    console.error(err.request);
-  } else {
-    console.error(err.config);
-  }
-}
-
-async function query<T>(route: string, config?: AxiosRequestConfig): Promise<T | undefined> {
-  const result = await axios.get<T>(route, config)
-    .catch(handleAxiosError);
-
-  return result?.data;
-}
- 
-async function mutation<T>(route:string, data: object, config?: AxiosRequestConfig): Promise<T | undefined> {
-  const result = await axios.post<T>(route, data, config)
-    .catch(handleAxiosError);
-
-  return result?.data;
-}
-
 // using route functions to support potential parameters in the future
-const QUERY_ROUTES = {
+const API_ROUTES = {
   availableTours: () => `tour-avail`,
+  reserveTour: () => `tour-reservation`,
 };
 
-export class Queries {
+class API {
+  private static handleAxiosError(err: AxiosError) {
+    if (err.response) {
+      console.error(err.response.data);
+      console.error(err.response.status);
+      console.error(err.response.headers);
+    } else if (err.request) {
+      console.error(err.request);
+    } else {
+      console.error(err.config);
+    }
+  }
+
+  private static async get<T>(route: string, config?: AxiosRequestConfig): Promise<T | undefined> {
+    const result = await axios.get<T>(route, config)
+      .catch(API.handleAxiosError);
+  
+    return result?.data;
+  }
+   
+  private static async post<T>(route:string, data: object, config?: AxiosRequestConfig): Promise<T | undefined> {
+    const result = await axios.post<T>(route, data, config)
+      .catch(API.handleAxiosError);
+  
+    return result?.data;
+  }
+  
+  private static async put<T>(route:string, data: object, config?: AxiosRequestConfig): Promise<T | undefined> {
+    const result = await axios.put<T>(route, data, config)
+      .catch(API.handleAxiosError);
+  
+    return result?.data;
+  }
+  
+  private static async patch<T>(route:string, data: object, config?: AxiosRequestConfig): Promise<T | undefined> {
+    const result = await axios.patch<T>(route, data, config)
+      .catch(API.handleAxiosError);
+  
+    return result?.data;
+  }
+  
+  private static async delete(route:string, config?: AxiosRequestConfig): Promise<boolean> {
+    const result = await axios.delete<boolean>(route, config)
+      .catch(API.handleAxiosError);
+  
+    return result?.data ?? false;
+  }
+
   static async getAvailableTours(): Promise<IToursAvailable | undefined>  {
-    const result = await query<IToursAvailable>(QUERY_ROUTES.availableTours());
+    const result = await API.get<IToursAvailable>(API_ROUTES.availableTours());
     return result;
   }
-}
 
-const MUTATION_ROUTES = {
-  reserveTour: () => `tour-reservation`, 
-};
-
-export class Mutations {
   static async reserveTour(tourReservation: ITourReservation): Promise<ITourReservation | undefined> {
-    const result = await mutation<ITourReservation>(MUTATION_ROUTES.reserveTour(), tourReservation);
+    const result = await API.post<ITourReservation>(API_ROUTES.reserveTour(), tourReservation);
     return result;
   }
 }
+
+export default API;
