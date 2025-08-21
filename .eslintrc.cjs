@@ -40,5 +40,10 @@ module.exports = {
   rules: {
     // custom rules
   },
+  settings: {
+    react: {
+      version: "detect",
+    },
+  },
   ignorePatterns: ['node_modules', 'dist', 'build', 'public'],
 };
