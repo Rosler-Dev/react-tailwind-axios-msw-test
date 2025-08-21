@@ -160,9 +160,9 @@ function enhanceTourData(tourData?: IToursAvailable): IToursAvailableEnhanced | 
       if (t.pax <= 0) {
         continue;
       }
-      const name = t.name.toLowerCase() as GuestType;
-      tour.ticketsSeatCountByName[name] += t.pax;
-      tour.ticketsByName[name].push(t);
+
+      tour.ticketsSeatCountByName[t.name] += t.pax;
+      tour.ticketsByName[t.name].push(t);
     }
 
     Object.values(tour.ticketsByName).forEach(tickets => {

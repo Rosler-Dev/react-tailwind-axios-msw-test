@@ -1,46 +1,45 @@
-import { http, HttpResponse, delay } from 'msw';
+import { http, HttpResponse, delay, PathParams } from 'msw';
 import API from '../../api';
+import { ITourReservation, IToursAvailable } from '../../../types';
 
 const handlers = [
-  http.get(API.Routes.availableTours, getAvailableToursResolver),
-  http.post(API.Routes.reserveTour, reserveTourResolver),
+  http.get<PathParams<never>, undefined, IToursAvailable>(API.Routes.availableTours, getAvailableToursResolver),
+  http.post<PathParams<never>, ITourReservation, ITourReservation>(API.Routes.reserveTour, reserveTourResolver),
 ];
 
 async function getAvailableToursResolver() {
-  // return new HttpResponse(null, { status: 404 });
-
-  return HttpResponse.json({
+  return HttpResponse.json<IToursAvailable>({
     tours: [
       {
         id: "1001",
-        description: "A tour of the local camel farm.",
+        description: "A tour of camel fight club. Come step into the wooden ring of champions! Two mammals enter, one mammal leaves.",
         image: "https://images.pexels.com/photos/628661/pexels-photo-628661.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
         maxPax: 8,
-        minPax: 0,
-        name: "Camel Farm Tour",
+        minPax: 1,
+        name: "Camel Fight Club Tour",
         seats: 3,
         tickets: [
           {
             id: "001",
-            name: "Adult",
-            pax: 1,
+            name: "adult",
+            pax: 3,
             price: 1000
           },
           {
             id: "002",
-            name: "Child",
-            pax: 1,
+            name: "child",
+            pax: 2,
             price: 500
           },
           {
             id: "003",
-            name: "Senior",
-            pax: 1,
+            name: "senior",
+            pax: 2,
             price: 800
           },
           {
             id: "004",
-            name: "Infant",
+            name: "infant",
             pax: 1,
             price: 0
           }
@@ -48,34 +47,34 @@ async function getAvailableToursResolver() {
       },
       {
         id: "1002",
-        description: "A tour of the local helicopter farm.",
+        description: "A friendly helicopter tour. If we are double-booked, we may just have to hang you off the bottom of the craft. Wheeeee!",
         image: "https://images.pexels.com/photos/126625/pexels-photo-126625.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
         maxPax: 6,
         minPax: 2,
-        name: "Helicopter tour",
+        name: "Helicopter Tour",
         seats: 6,
         tickets: [
           {
             id: "005",
-            name: "Adult",
-            pax: 1,
+            name: "adult",
+            pax: 7,
             price: 10000
           },
           {
             id: "006",
-            name: "Child",
-            pax: 1,
+            name: "child",
+            pax: 2,
             price: 5000
           },
           {
             id: "007",
-            name: "Senior",
-            pax: 1,
+            name: "senior",
+            pax: 3,
             price: 8000
           },
           {
             id: "008",
-            name: "Infant",
+            name: "infant",
             pax: 0,
             price: 0
           }
@@ -83,7 +82,7 @@ async function getAvailableToursResolver() {
       },
       {
         id: "1003",
-        description: "You're on a boat!",
+        description: "You're on a boat! Pretty self explanatory.",
         image: "https://images.pexels.com/photos/1488017/pexels-photo-1488017.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
         maxPax: 4,
         minPax: 1,
@@ -92,27 +91,97 @@ async function getAvailableToursResolver() {
         tickets: [
           {
             id: "009",
-            name: "Adult",
+            name: "adult",
             pax: 1,
             price: 2500
           },
           {
             id: "010",
-            name: "Child",
-            pax: 1,
+            name: "child",
+            pax: 3,
             price: 1500
           },
           {
             id: "011",
-            name: "Senior",
+            name: "senior",
             pax: 1,
             price: 1600
           },
           {
             id: "012",
-            name: "Infant",
-            pax: 0,
+            name: "infant",
+            pax: 3,
             price: 0
+          }
+        ]
+      },
+      {
+        id: "1004",
+        description: "Enter the whiskey cellar of legend! Step right in, and you might just get more than you bargained for....",
+        image: "https://images.pexels.com/photos/2581022/pexels-photo-2581022.jpeg",
+        maxPax: 4,
+        minPax: 1,
+        name: "Black Rose Whiskey Dungeon Tour",
+        seats: 4,
+        tickets: [
+          {
+            id: "013",
+            name: "adult",
+            pax: 2,
+            price: 50
+          },
+          {
+            id: "014",
+            name: "child",
+            pax: 1,
+            price: 40
+          },
+          {
+            id: "015",
+            name: "senior",
+            pax: 1,
+            price: 40
+          },
+          {
+            id: "016",
+            name: "infant",
+            pax: 1,
+            price: 5
+          }
+        ]
+      },
+      {
+        id: "1005",
+        description: "Have you ever wanted to jump out of an airplane so that you can plummet to your DOOM!? Well, we've got you covered. We provide the parachutes, and you provide the insanity.",
+        image: "https://images.pexels.com/photos/2162689/pexels-photo-2162689.jpeg",
+        maxPax: 4,
+        minPax: 1,
+        name: "Sky Diving Tour",
+        seats: 4,
+        tickets: [
+          {
+            id: "017",
+            name: "adult",
+            pax: 2,
+            price: 1700
+          },
+          {
+            id: "018",
+            name: "child",
+            pax: 1,
+            price: 1300
+          },
+          {
+            id: "019",
+            name: "senior",
+            pax: 1,
+            price: 1300
+          },
+          {
+            id: "020",
+            name: "infant",
+            pax: 1,
+            price: 500
           }
         ]
       }
@@ -124,22 +193,11 @@ async function getAvailableToursResolver() {
   });
 }
 
-async function reserveTourResolver(request: any) {
-  // return HttpResponse.json(request.clone());
-
-  return HttpResponse.json({
-    tourId: "1001",
-    tickets: [
-      {
-        id: "001",
-        count: 1
-      },
-      {
-        id: "002",
-        count: 1
-      }
-    ]
-  })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function reserveTourResolver(obj: any) {
+  const data = await obj.request.clone().json();
+  await delay(1000);
+  return HttpResponse.json<ITourReservation>(data);
 }
 
 export default handlers;
