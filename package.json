@@ -11,6 +11,7 @@
     "preview": "vite preview --port 3004"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
     "axios": "^1.6.8",
     "lodash": "^4.17.21",
     "msw": "^2.10.4",

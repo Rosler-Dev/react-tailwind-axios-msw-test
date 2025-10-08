@@ -2,10 +2,7 @@ export interface ITour {
   id: string;
   description: string;
   image: string;
-  maxPax: number;
-  minPax: number;
   name: string;
-  seats: number;
   tickets: ITicket[];
 }
 

@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import ReactLogo from "./components/ReactLogo";
 import Counter from "./components/Counter";
 import TourCard from "./components/TourCard";
 import { capitalize, getLocale } from "./utils";
 import API from "./api/api";
-import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservation, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
+import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
+import BookingDialog from "./components/BookingDialog";
 
 function getDefaultGuestsState(): IGuests {
   return ({
     adult: 1,
-    child: 1,
+    child: 0,
     senior: 0,
     infant: 0,
   });
@@ -26,20 +26,18 @@ function getDefaulTourDataState(): IToursAvailableEnhanced {
   });
 }
 
-function getDefaultSortDataState(): ISort<ITour> {
-  return ({
-    direction: "",
-    compareFn: undefined,
-  });
+function getDefaultSortDataState(): ISort<ITourEnhanced> {
+  return getNewSortData("asc");
 }
 
 function App() {
   const initialized = useRef<boolean>(false);
   const [guests, setGuests] = useState<IGuests>(getDefaultGuestsState());
   const [tourData, setTourData] = useState<IToursAvailableEnhanced>(getDefaulTourDataState());
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sortData, setSortData] = useState<ISort<ITourEnhanced>>(getDefaultSortDataState());
-  const [booking, setBooking] = useState<ITourReservation | undefined>();
+  const [bookedTour, setBookedTour] = useState<ITourEnhanced | undefined>();
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const guestCount = guests.adult + guests.child + guests.infant + guests.senior;
 
   useEffect(() => {
     if (initialized.current) {
@@ -49,20 +47,19 @@ function App() {
     const getAvailableTours = async () => {
       const result = await API.getAvailableTours();
       setTourData(enhanceTourData(result) ?? getDefaulTourDataState());
-      setIsLoading(false);
     };
     getAvailableTours();
   }, []);
 
-  const bookTour = useCallback(async (id: string, tickets: ITourReservationTicket[]): Promise<void> => {
+  const bookTour = useCallback(async (tour: ITourEnhanced): Promise<void> => {
     const result = await API.reserveTour({
-      tourId: id,
-      tickets: tickets, 
+      tourId: tour.id,
+      tickets: tour.ticketsToBook, 
     });
     
     if (result) {
-      setBooking(result);
-      setTimeout(() => setBooking(undefined), 4000);
+      setBookedTour(tour);
+      setBookingDialogOpen(true);
     }
   }, []);
 
@@ -73,14 +70,18 @@ function App() {
     }));
   }, []);
 
+  const onBookingDialogClose = useCallback(() => {
+    setBookingDialogOpen(false);
+    setBookedTour(undefined);
+  }, []);
+
   const { tours, currency } = tourData;
   const currencyFormatter = currency.currencyFormatter;
   const currencyOffset = currency.currencyOffset;
-  const guestCount = guests.adult + guests.child + guests.senior + guests.infant;
-  const applicableTours = useMemo(() => tours.filter(t1 => canTourAccommodateGuests(t1, guests, guestCount)).map(t2 => {
+  const applicableTours = useMemo(() => tours.map(t2 => {
     const { ticketsToBook, price } = getCheapestMatchingTicketsToBook(t2, guests, currencyOffset);
     return ({...t2, ticketsToBook, price} as ITourEnhanced);
-  }), [tours, guests, guestCount, currencyOffset]);
+  }), [tours, guests, currencyOffset]);
   
   useMemo(() => {
     if (sortData.compareFn) {
@@ -90,7 +91,6 @@ function App() {
 
   return (
     <div className="px-5 py-2">
-      <ReactLogo className={`mb-2 ${isLoading ? 'animate-spin' : undefined}`} />
       <h1 className="font-bold text-2xl">Ticket Selection</h1>
       <div className="grid grid-cols-[auto_auto_20px_auto] max-w-60 mt-1 mb-5">
         {Object.entries(guests).map(([key, count]) => (
@@ -106,7 +106,6 @@ function App() {
       <div className="flex items-center mt-3 mb-6">
         <p>Sort By:</p>
         <select className="ml-2 px-1 py-0.5 border border-solid border-black" onChange={(evt) => setSortData(getNewSortData(evt.target.value as Direction))}>
-          <option value="">--None--</option>
           <option value="asc">Lowest Price</option>
           <option value="desc">Highest Price</option>
         </select>
@@ -123,15 +122,14 @@ function App() {
                   description={tour.description}
                   price={currencyFormatter.format(tour.price)}
                   hasTickets={tour.ticketsToBook.length > 0}
-                  onBooking={() => bookTour(tour.id, tour.ticketsToBook)}
+                  hasSelection={guestCount > 0}
+                  onBooking={() => bookTour(tour)}
                 />
               );
             })}
           </div>
         }
-      <div>
-       {booking && <h1 className="text-3xl mt-8 animate-bounce">Tour Successfully Booked!</h1>}
-      </div>
+      <BookingDialog isOpen={bookingDialogOpen} onClose={onBookingDialogClose} tour={bookedTour} />
     </div>
   );
 }
@@ -180,24 +178,26 @@ function lowestPriceCompareFn(a: ITicket, b: ITicket): number {
   return a.price - b.price;
 }
 
-function canTourAccommodateGuests(tour: ITourEnhanced, guests: IGuests, guestCount: number): boolean {
-  return guestCount >= tour.minPax && guestCount <= tour.maxPax && guestCount <= tour.seats && guests.adult <= tour.ticketsSeatCountByName.adult &&
-         guests.child <= tour.ticketsSeatCountByName.child && guests.senior <= tour.ticketsSeatCountByName.senior && guests.infant <= tour.ticketsSeatCountByName.infant;
+function canTourAccommodateGuests(tour: ITourEnhanced, guests: IGuests): boolean {
+  return guests.adult <= tour.ticketsSeatCountByName.adult && guests.child <= tour.ticketsSeatCountByName.child &&
+         guests.senior <= tour.ticketsSeatCountByName.senior && guests.infant <= tour.ticketsSeatCountByName.infant;
 }
 
 function getCheapestMatchingTicketsToBook(tour: ITourEnhanced, guests: IGuests, currencyOffset: number): {ticketsToBook: ITourReservationTicket[], price: number} {
-  // assumes tour has enough tickets of the appropriate type, and that tickets are in sorted order by price, asc.
-  // doing things this way because although the test data doesn't have this, there could be multiple tickets of the same name (ex: Adult) that have different prices (earlybird?).
+  // assumes that tickets are in sorted order by price, asc.
+  // although the test data doesn't have this, there could be multiple tickets of the same name (ex: Adult) that have different prices (earlybird?).
   const ticketsToBook: ITourReservationTicket[] = [];
   let price = 0;
 
-  Object.entries(tour.ticketsByName).forEach(([name, tickets]: [string, ITicket[]]) => {
-    const ticketData = _getCheapestTicketsData(tickets, guests[name as GuestType]);
-    ticketsToBook.push(...ticketData.tickets);
-    price += ticketData.price;
-  });
-
-  price *= currencyOffset;
+  if (canTourAccommodateGuests(tour, guests)) {
+    Object.entries(tour.ticketsByName).forEach(([name, tickets]: [string, ITicket[]]) => {
+      const ticketData = _getCheapestTicketsData(tickets, guests[name as GuestType]);
+      ticketsToBook.push(...ticketData.tickets);
+      price += ticketData.price;
+    });
+  
+    price *= currencyOffset;
+  }
 
   return { ticketsToBook, price };
 }
@@ -234,6 +234,11 @@ function getNewSortData(direction: Direction) {
 
   if (direction === "asc" || direction === 'desc') {
     newSortData.compareFn = ((a: ITourEnhanced, b: ITourEnhanced) => {
+      if (a.ticketsToBook.length === 0 && b.ticketsToBook.length > 0) {
+        return 1;
+      } else if (b.ticketsToBook.length === 0 && a.ticketsToBook.length > 0) {
+        return -1;
+      }
       return direction === "asc" ? a.price - b.price : b.price - a.price;
     });
   }

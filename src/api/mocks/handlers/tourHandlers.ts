@@ -13,11 +13,8 @@ async function getAvailableToursResolver() {
       {
         id: "1001",
         description: "A tour of camel fight club. Come step into the wooden ring of champions! Two mammals enter, one mammal leaves.",
-        image: "https://images.pexels.com/photos/628661/pexels-photo-628661.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-        maxPax: 8,
-        minPax: 1,
+        image: "https://images.pexels.com/photos/628661/pexels-photo-628661.jpeg",
         name: "Camel Fight Club Tour",
-        seats: 3,
         tickets: [
           {
             id: "001",
@@ -48,11 +45,8 @@ async function getAvailableToursResolver() {
       {
         id: "1002",
         description: "A friendly helicopter tour. If we are double-booked, we may just have to hang you off the bottom of the craft. Wheeeee!",
-        image: "https://images.pexels.com/photos/126625/pexels-photo-126625.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-        maxPax: 6,
-        minPax: 2,
+        image: "https://images.pexels.com/photos/126625/pexels-photo-126625.jpeg",
         name: "Helicopter Tour",
-        seats: 6,
         tickets: [
           {
             id: "005",
@@ -83,11 +77,8 @@ async function getAvailableToursResolver() {
       {
         id: "1003",
         description: "You're on a boat! Pretty self explanatory.",
-        image: "https://images.pexels.com/photos/1488017/pexels-photo-1488017.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-        maxPax: 4,
-        minPax: 1,
+        image: "https://images.pexels.com/photos/1488017/pexels-photo-1488017.jpeg",
         name: "Gondola Tour",
-        seats: 6,
         tickets: [
           {
             id: "009",
@@ -119,10 +110,7 @@ async function getAvailableToursResolver() {
         id: "1004",
         description: "Enter the whiskey cellar of legend! Step right in, and you might just get more than you bargained for....",
         image: "https://images.pexels.com/photos/2581022/pexels-photo-2581022.jpeg",
-        maxPax: 4,
-        minPax: 1,
         name: "Black Rose Whiskey Dungeon Tour",
-        seats: 4,
         tickets: [
           {
             id: "013",
@@ -154,10 +142,7 @@ async function getAvailableToursResolver() {
         id: "1005",
         description: "Have you ever wanted to jump out of an airplane so that you can plummet to your DOOM!? Well, we've got you covered. We provide the parachutes, and you provide the insanity.",
         image: "https://images.pexels.com/photos/2162689/pexels-photo-2162689.jpeg",
-        maxPax: 4,
-        minPax: 1,
         name: "Sky Diving Tour",
-        seats: 4,
         tickets: [
           {
             id: "017",
@@ -196,7 +181,7 @@ async function getAvailableToursResolver() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function reserveTourResolver(obj: any) {
   const data = await obj.request.clone().json();
-  await delay(1000);
+  await delay(150);
   return HttpResponse.json<ITourReservation>(data);
 }
 
