@@ -3,7 +3,7 @@ import Counter from "./components/Counter";
 import TourCard from "./components/TourCard";
 import { capitalize, getLocale } from "./utils";
 import API from "./api/api";
-import { GuestType, Direction, IGuests, ISort, ITicket, ITour, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
+import { GuestType, Direction, IGuests, ISort, ITicket, ITourReservationTicket, IToursAvailable, IToursAvailableEnhanced, ITourEnhanced } from "./types";
 import BookingDialog from "./components/BookingDialog";
 
 function getDefaultGuestsState(): IGuests {
